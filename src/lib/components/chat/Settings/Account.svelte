@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { onMount, getContext } from 'svelte';
+	import { onMount, getContext, onDestroy } from 'svelte';
 
 	import { user } from '$lib/stores';
 	import { updateUserProfile, createAPIKey, getAPIKey } from '$lib/apis/auths';
@@ -12,6 +12,7 @@
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
+	import { generateSecret, totp } from '$lib/utils/totp';
 
 	const i18n = getContext('i18n');
 
@@ -21,6 +22,10 @@
 	let name = '';
 
 	let showAPIKeys = false;
+	let showTOTP = false;
+	let toptSecret = '';
+	let totpCode = '';
+	let totpInterval:NodeJS.Timeout;
 
 	let JWTTokenCopied = false;
 
@@ -61,12 +66,21 @@
 	onMount(async () => {
 		name = $user.name;
 		profileImageUrl = $user.profile_image_url;
+		toptSecret = generateSecret()
+		totpCode = await totp(toptSecret)
+		totpInterval = setInterval(async ()=>{
+			totpCode = await totp(toptSecret)
+		}, 30000)
 
 		APIKey = await getAPIKey(localStorage.token).catch((error) => {
 			console.log(error);
 			return '';
 		});
 	});
+
+	onDestroy(()=>{
+		clearInterval(totpInterval)
+	})
 </script>
 
 <div class="flex flex-col h-full justify-between text-sm">
@@ -391,6 +405,22 @@
 						{/if}
 					</div>
 				</div>
+			</div>
+		{/if}
+			<div class="flex justify-between items-center text-sm">
+			<div class="  font-medium">TOTP</div>
+			<button
+				class=" text-xs font-medium text-gray-500"
+				type="button"
+				on:click={() => {
+					showTOTP = !showTOTP;
+				}}>{showAPIKeys ? $i18n.t('Hide') : $i18n.t('Show')}</button
+			>
+		</div>
+		{#if showTOTP}
+			<div>
+				{toptSecret}
+				{totpCode}
 			</div>
 		{/if}
 	</div>
