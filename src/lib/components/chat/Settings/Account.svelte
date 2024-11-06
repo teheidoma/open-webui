@@ -13,6 +13,7 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
 	import { generateSecret, totp } from '$lib/utils/totp';
+	import AddTOPT from '$lib/components/chat/Settings/Account/AddTOPT.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -22,10 +23,12 @@
 	let name = '';
 
 	let showAPIKeys = false;
+
 	let showTOTP = false;
 	let toptSecret = '';
 	let totpCode = '';
 	let totpInterval:NodeJS.Timeout;
+	let showTOTPModal = false;
 
 	let JWTTokenCopied = false;
 
@@ -66,11 +69,6 @@
 	onMount(async () => {
 		name = $user.name;
 		profileImageUrl = $user.profile_image_url;
-		toptSecret = generateSecret()
-		totpCode = await totp(toptSecret)
-		totpInterval = setInterval(async ()=>{
-			totpCode = await totp(toptSecret)
-		}, 30000)
 
 		APIKey = await getAPIKey(localStorage.token).catch((error) => {
 			console.log(error);
@@ -419,6 +417,9 @@
 		</div>
 		{#if showTOTP}
 			<div>
+				<button on:click={()=>{
+					showTOTPModal = true;
+				}}>CREATE</button>
 				{toptSecret}
 				{totpCode}
 			</div>
@@ -440,3 +441,6 @@
 		</button>
 	</div>
 </div>
+<AddTOPT bind:show={showTOTPModal}>
+
+</AddTOPT>
